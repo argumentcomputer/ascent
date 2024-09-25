@@ -3,12 +3,17 @@ extern crate proc_macro;
 use ascent_base::util::update;
 use proc_macro2::{Span, TokenStream};
 use std::{
-    collections::{HashMap, HashSet}, iter::repeat, sync::Mutex
+    collections::{HashMap, HashSet},
+    iter::repeat,
+    sync::Mutex,
 };
-use syn::{parse::{Parse, ParseStream, Parser}, LitStr};
 use syn::{
     braced, parenthesized, parse2, punctuated::Punctuated, spanned::Spanned, Attribute, Error,
     Expr, ExprMacro, Generics, Ident, Pat, Result, Token, Type, Visibility, WhereClause,
+};
+use syn::{
+    parse::{Parse, ParseStream, Parser},
+    LitStr,
 };
 use syn::{ImplGenerics, TypeGenerics};
 
@@ -58,8 +63,8 @@ impl Signatures {
         &self,
     ) -> (ImplGenerics<'_>, TypeGenerics<'_>, Option<&'_ WhereClause>) {
         let Some(signature) = &self.implementation else {
-         return self.split_ty_generics_for_impl();
-      };
+            return self.split_ty_generics_for_impl();
+        };
 
         let (impl_generics, _, _) = signature.impl_generics.split_for_impl();
         let (_, ty_generics, where_clause) = signature.generics.split_for_impl();
@@ -101,7 +106,7 @@ impl Parse for TypeSignature {
         let _struct_kw = input.parse()?;
         let ident = input.parse()?;
         let generics = parse_generics_with_where_clause(input)?;
-        
+
         let fields = if input.peek(syn::token::Brace) {
             let content;
             braced!(content in input);
@@ -109,7 +114,7 @@ impl Parse for TypeSignature {
         } else {
             Punctuated::new()
         };
-        
+
         let _semi = if fields.is_empty() {
             Some(input.parse()?)
         } else {
@@ -698,6 +703,11 @@ impl Parse for DsAttributeContents {
     }
 }
 
+#[derive(Debug, Clone, Parse)]
+pub(crate) struct CallAttribute {
+    pub(crate) call: Expr,
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct TraceAttribute {
     pub(crate) format_string: String,
@@ -756,13 +766,11 @@ pub(crate) fn generate_auto_trace(rule: &RuleNode) -> TraceAttribute {
                 }
             }
             BodyItemNode::Generator(_) => format_parts.push("for ...".to_string()),
-            BodyItemNode::Cond(cond) => {
-                match cond {
-                    CondClause::If(_) => format_parts.push("if ...".to_string()),
-                    CondClause::IfLet(_) => format_parts.push("if let ...".to_string()),
-                    CondClause::Let(_) => format_parts.push("let ...".to_string()),
-                }
-            }
+            BodyItemNode::Cond(cond) => match cond {
+                CondClause::If(_) => format_parts.push("if ...".to_string()),
+                CondClause::IfLet(_) => format_parts.push("if let ...".to_string()),
+                CondClause::Let(_) => format_parts.push("let ...".to_string()),
+            },
             BodyItemNode::Agg(_) => format_parts.push("agg ...".to_string()),
             _ => format_parts.push("...".to_string()),
         }

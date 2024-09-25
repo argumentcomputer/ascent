@@ -36,7 +36,16 @@ fn main() {
 
     prog.run();
 
-    let AscentProgram { mut list, __list_ind_common, list_indices_0_1, list_indices_none, scc_times, scc_iters, update_time_nanos, update_indices_duration  } = prog;
+    let AscentProgram {
+        mut list,
+        __list_ind_common,
+        list_indices_0_1,
+        list_indices_none,
+        scc_times,
+        scc_iters,
+        update_time_nanos,
+        update_indices_duration,
+    } = prog;
 
     list.sort_by_key(|(_, key)| *key);
 

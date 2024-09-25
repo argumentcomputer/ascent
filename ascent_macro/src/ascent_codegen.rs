@@ -1429,6 +1429,15 @@ fn head_clauses_structs_and_update_code(
         }
     }
 
+    let call_code = if let Some(call_attr) = &rule.call_attr {
+        let call = &call_attr.call;
+        quote! {
+            #call
+        }
+    } else {
+        quote! {}
+    };
+
     let trace_code = if let Some(trace_attr) = &rule.trace_attr {
         let format_string = &trace_attr.format_string;
         let args = &trace_attr.args;
@@ -1443,6 +1452,7 @@ fn head_clauses_structs_and_update_code(
         quote! {},
         quote! {
             #(#add_rows)*
+            #call_code
             #trace_code
         },
     )

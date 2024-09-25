@@ -3,7 +3,9 @@ use crate::ascent_hir::{
     AscentConfig, AscentIr, IndexValType, IrAggClause, IrBodyClause, IrBodyItem, IrHeadClause,
     IrRelation, IrRule, RelationMetadata,
 };
-use crate::ascent_syntax::{CondClause, GeneratorNode, RelationIdentity, TraceAttribute};
+use crate::ascent_syntax::{
+    CallAttribute, CondClause, GeneratorNode, RelationIdentity, TraceAttribute,
+};
 use crate::utils::{expr_to_ident, intersects, pat_to_ident, tuple_type};
 use crate::{
     ascent_mir::MirRelationVersion::*, ascent_syntax::Signatures, syn_utils::pattern_get_vars,
@@ -59,6 +61,7 @@ pub(crate) fn mir_summary(mir: &AscentMir) -> String {
 
 #[derive(Clone)]
 pub(crate) struct MirRule {
+    pub call_attr: Option<CallAttribute>,
     pub trace_attr: Option<TraceAttribute>,
     pub head_clauses: Vec<IrHeadClause>,
     pub body_items: Vec<MirBodyItem>,
@@ -499,6 +502,7 @@ fn compile_hir_rule_to_mir_rules(
                 !intersects(pre_first_clause_vars, bcls[ind + 1].bound_vars())
             });
             MirRule {
+                call_attr: rule.call_attr.clone(),
                 trace_attr: rule.trace_attr.clone(),
                 body_items: bcls,
                 head_clauses: rule.head_clauses.clone(),

@@ -9,7 +9,8 @@ use proc_macro2::{Ident, Span, TokenStream};
 use syn::{parse2, parse_quote, spanned::Spanned, Attribute, Error, Expr, Pat, Path, Type};
 
 use crate::ascent_syntax::{
-    generate_auto_trace, BodyClauseArg, BodyItemNode, CondClause, GeneratorNode, RelationIdentity, RuleNode, TraceAttribute
+    generate_auto_trace, BodyClauseArg, BodyItemNode, CallAttribute, CondClause, GeneratorNode,
+    RelationIdentity, RuleNode, TraceAttribute,
 };
 use crate::{
     ascent_syntax::{DsAttributeContents, RelationNode, Signatures},
@@ -31,6 +32,7 @@ pub(crate) struct AscentConfig {
 
 impl AscentConfig {
     const TRACE_ATTR: &'static str = "trace";
+    const CALL_ATTR: &'static str = "call";
     const MEASURE_RULE_TIMES_ATTR: &'static str = "measure_rule_times";
     const GENERATE_RUN_TIMEOUT_ATTR: &'static str = "generate_run_timeout";
     const INTER_RULE_PARALLELISM_ATTR: &'static str = "inter_rule_parallelism";
@@ -62,6 +64,7 @@ impl AscentConfig {
 
         let recognized_attrs = [
             Self::TRACE_ATTR,
+            Self::CALL_ATTR,
             Self::MEASURE_RULE_TIMES_ATTR,
             Self::GENERATE_RUN_TIMEOUT_ATTR,
             Self::INTER_RULE_PARALLELISM_ATTR,
@@ -123,6 +126,8 @@ pub(crate) struct RelationMetadata {
 }
 
 pub(crate) struct IrRule {
+    // TODO: unify these later
+    pub call_attr: Option<CallAttribute>,
     pub trace_attr: Option<TraceAttribute>,
     pub head_clauses: Vec<IrHeadClause>,
     pub body_items: Vec<IrBodyItem>,
@@ -434,19 +439,21 @@ fn compile_rule_to_ir_rule(
         Ok(())
     }
 
+    let mut call_attr = None;
     let mut trace_attr = None;
 
     for attr in &rule.attrs {
+        if attr.path().is_ident("call") {
+            call_attr = Some(attr.parse_args::<CallAttribute>()?);
+        }
         if attr.path().is_ident("trace") {
             trace_attr = Some(attr.parse_args::<TraceAttribute>()?);
-            break;
         }
     }
 
     if trace_attr.is_none() && global_trace {
         trace_attr = Some(generate_auto_trace(rule));
     }
-
 
     let first_clause_ind = rule
         .body_items
@@ -629,6 +636,7 @@ fn compile_rule_to_ir_rule(
 
     Ok((
         IrRule {
+            call_attr,
             trace_attr,
             simple_join_start_index,
             head_clauses,
